@@ -1,0 +1,26 @@
+{
+  "name": "logseq-on-this-day",
+  "version": "0.0.1",
+  "author": "imrickysu",
+  "main": "dist/index.html",
+  "description": "Review previous journals on this day.",
+  "scripts": {
+    "dev": "parcel index.html --port 1235",
+    "build": "parcel build --public-url ./ --no-source-maps index.html  --no-minify"
+  },
+  "logseq": {
+    "icon": "./icon.png",
+    "id": "logseq-on-this-day"
+  },
+  "dependencies": {
+    "@logseq/libs": "^0.0.1-alpha.35",
+    "yarn": "^1.22.19"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5"
+  },
+  "license": "MIT",
+  "browserslist": [
+    "chrome 80"
+  ]
+}
