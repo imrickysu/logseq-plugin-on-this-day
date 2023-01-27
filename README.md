@@ -6,6 +6,10 @@ Review previous journals on this day.
 
 * List all journals created on this day in one page
 
+### Demo
+
+![Demo](./demo.gif)
+
 ### How to enable this plugin
 
 Since this plugin hasn't been accepted by Logseq yet, please enable developer mode to use this plugin
