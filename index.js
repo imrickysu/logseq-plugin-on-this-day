@@ -13,7 +13,7 @@ const settingsTemplate = [
     type: 'string',
     default: "On This Day",
     title: "Page title for the On This Day page",
-    description: "Specify if you wish to change the page title. It's valid to use non-English characters."
+    description: "Specify if you wish to change the page title. It's valid to use non-English characters. Warning: existing contents on this page will be removed every time."
   }
 ];
 

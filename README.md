@@ -26,4 +26,4 @@ Once the plugin is loaded, you can click the plugin button on the top icon bar, 
 On the plugin settings page, you can customize the following settings for this plugin by selecting Settings -> Plugins -> logseq-on-this-day.
 
 * startingYear: Specify the starting year you wish to view on the On This Day page (till now). Journals before this year will be skipped.
-* pageTitle: You can customize the page title. It's valid to use non-English characters.
+* pageTitle: You can customize the page title. It's valid to use non-English characters. Warning: existing contents on this page will be removed every time.
