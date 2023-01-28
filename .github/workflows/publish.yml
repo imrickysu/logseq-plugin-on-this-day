@@ -30,7 +30,7 @@ jobs:
           mv dist ${{ env.PLUGIN_NAME }}
           zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
           ls
-          echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
+          echo "tag_name=$(git tag --sort version:refname | tail -n 1)" >> $GITHUB_ENV
 
       - name: Create Release
         id: create_release
@@ -52,7 +52,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./${{ env.PLUGIN_NAME }}.zip
-          asset_name: ${{ env.PLUGIN_NAME }}-${{ steps.build.outputs.tag_name }}.zip
+          asset_name: ${{ env.PLUGIN_NAME }}-${{ env.tag_name }}.zip
           asset_content_type: application/zip
 
       - name: Upload package.json
