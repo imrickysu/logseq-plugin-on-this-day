@@ -10,16 +10,14 @@ Review previous journals on this day.
 
 ![Demo](./demo.gif)
 
-### How to enable this plugin
+### How to use this plugin
 
-Since this plugin hasn't been accepted by Logseq yet, please enable developer mode to use this plugin
+1. Once the plugin is installed and enabled, you can click the plugin button on the top toolbar, find the "on-this-day" line and click it to pin its icon to the toolbar. 
+2. Clicking the on-this-day monument button will generate the On This Day page if it doesn't exist, or refresh it if it exists.
 
-1. clone this repo to your local disk `git clone https://github.com/imrickysu/logseq-on-this-day`
-2. Compile the plugin with `yarn && yarn build` (You need to install nvm, npm, yarn, etc.)
-3. Enable Logseq developer mode: Settings -> Advanced -> Developer Mode: Enable
-4. Add the plugin path: Settings -> Plugins -> Load unpacked plugin
-
-Once the plugin is loaded, you can click the plugin button on the top icon bar, pin the "on-this-day" icon to the toolbar. Clicking the monument button will generate the On This Day page if it doesn't exist, or refresh it if it exists.
+**Warning**: Contents on the On This Day page will be removed every time.
+- Please do not add new blocks to this page manually because they will be lost next time you generate this page.
+- If you wish to revisit this page without regenerating the contents, you can save this page to Favorites for quick access. 
 
 ### Customize the plugin
 
