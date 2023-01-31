@@ -1,6 +1,6 @@
 {
   "name": "logseq-on-this-day",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "imrickysu",
   "main": "dist/index.html",
   "description": "Review previous journals on this day.",
