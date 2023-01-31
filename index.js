@@ -41,11 +41,11 @@ function getQueryScriptOTD() {
   var queryTimeString = '(or';
 
   for (var i=startingYear; i<year; i++) {
-    const timeString = i + (month < 10 ? '0' : '') + month + day
+    const timeString = i + (month < 10 ? '0' : '') + month + (day < 10 ? '0' : '') + day
     queryTimeString += ` [(= ?d ${timeString})]`
   }
   queryTimeString += ")";
-  console.log(queryTimeString)
+  // console.log(queryTimeString)
 
   // queryTimeString example: (or [(= ?d 20100126)] [(= ?d 20110126)] [(= ?d 20120126)] [(= ?d 20130126)] [(= ?d 20140126)] [(= ?d 20150126)] [(= ?d 20160126)] [(= ?d 20170126)] [(= ?d 20180126)] [(= ?d 20190126)] [(= ?d 20200126)] [(= ?d 20210126)] [(= ?d 20220126)])
 
@@ -81,7 +81,7 @@ function getQueryScriptOTDPageID() {
             ${blockNameQueryString}
           ]
   `;
-  console.log(queryString)
+  // console.log(queryString)
   return (queryString);  
 }
 
@@ -91,7 +91,7 @@ function getQueryScriptOTDPageID() {
 */
 async function getOnThisDay() {
 
-  console.log("on-this-day plugin loaded.")
+  // console.log("on-this-day plugin loaded.")
 
   const queryScriptOTDPage = getQueryScriptOTDPageID();
   const queryScriptOTD = getQueryScriptOTD();
@@ -138,9 +138,9 @@ async function getOnThisDay() {
 
       // query for journals on this day
       let journal_query_ret = await logseq.DB.datascriptQuery(queryScriptOTD);
-      console.log("journal_query_ret")
-      console.log(journal_query_ret.length)
-      console.log(journal_query_ret)
+      // console.log("journal_query_ret")
+      // console.log(journal_query_ret.length)
+      // console.log(journal_query_ret)
 
       if (journal_query_ret.length < 1) {
         // No journals found
@@ -150,7 +150,7 @@ async function getOnThisDay() {
         // Some previous journals are found
 
       const query_ret_pages = journal_query_ret?.flat();
-      console.log(query_ret_pages[0].name);
+      // console.log(query_ret_pages[0].name);
 
       // embed journel pages to this page
       // logseq.Editor.updateBlock(targetBlock.uuid, getQueryScriptOTD());
