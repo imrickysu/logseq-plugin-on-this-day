@@ -27,15 +27,15 @@ logseq.useSettingsSchema(settingsTemplate);
 * getQueryScriptOTD()
 * This function generates the query string to find the On This Day page
 */
-function getQueryScriptOTD() {
+function getQueryScriptOTD(date) {
   const startingYear = logseq.settings.startingYear;
   //TODO: check this string is a valid string for year and should be smaller than the current year
 
+  console.log(date);
 
-  const date = new Date();
-  const day = date.getDate();
-  const month = date.getMonth()+1;
-  const year = date.getFullYear();
+  const day = date.day;
+  const month = date.month;
+  const year = date.year;
   // const dmy = `${day}/${month}/${year}`;
 
   var queryTimeString = '(or';
@@ -69,6 +69,7 @@ function getQueryScriptOTD() {
 * Note: Today this year is not included.
 */
 function getQueryScriptOTDPageID() {
+  const pageTitle = logseq.settings.pageTitle;
   const pageTitleLowerCase = logseq.settings.pageTitle.toLowerCase();
 
   const blockNameQueryString = `[?p :block/name "` + pageTitleLowerCase + `"]`;
@@ -86,87 +87,179 @@ function getQueryScriptOTDPageID() {
 }
 
 /*
-* getOnThisDay()
-* The main function to generate contents on the On This Day page
+* getDateFromOTDPage(OTDPageID)
+* 
+* Get the first block from On This Day page
 */
-async function getOnThisDay() {
+function getDateFromOTDPage(OTDPage) {
+  // if OTD page is empty, return 0
+  //return 0;
+
+  // if OTD page has date on first block, return date string
+  return {year:"2023", month:"1", day:"31"}
+
+}
+
+
+async function getOTDPage() {
+  const pageTitle = logseq.settings.pageTitle;
+  const queryScriptOTDPage = getQueryScriptOTDPageID();
+  // get the On This Day page
+  let ret = await logseq.DB.datascriptQuery(queryScriptOTDPage);
+  var page;
+    
+  if (ret.length < 1) {
+    // page does not exist
+    
+    // create page
+    page = await logseq.Editor.createPage(pageTitle,{},{format: "markdown", journal: false, createFirstBlock: false});
+
+  } else {
+    // page exists
+
+    page = ret[0][0];
+
+    // open page
+    if (page && page.name) {
+      // console.log(page.name)
+      logseq.App.pushState("page", { name: page.name });
+    }
+  }
+
+  return page;
+
+}
+
+async function cleanBlocksOnCurrentPage() {
+  // remove all blocks on this page
+  const pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree()
+
+  for (var i=0; i < pageBlocksTree.length; i++) {
+    await logseq.Editor.removeBlock(pageBlocksTree[i].uuid);
+  }
+
+} 
+
+
+async function generateOTDPage(date, page) {
+
+  const queryScriptOTD = getQueryScriptOTD(date);
+  console.log("queryScriptOTD")
+  console.log(queryScriptOTD)
+
+  // add a block for date
+  const dateString = `${date.month}/${date.day}/${date.year}`;
+  console.log("dateString")
+  console.log(dateString)
+  await logseq.Editor.appendBlockInPage(page.uuid, dateString);
+  console.log("append date complete")
+
+  // query for journals on this day
+  let journal_query_ret = await logseq.DB.datascriptQuery(queryScriptOTD);
+  console.log("journal_query_ret")
+  console.log(journal_query_ret.length)
+  console.log(journal_query_ret)
+
+  if (journal_query_ret.length < 1) {
+    // No journals found
+    await logseq.Editor.appendBlockInPage(page.uuid, "No entries on this day");
+
+  } else {
+    // Some previous journals are found
+
+    const query_ret_pages = journal_query_ret?.flat();
+    console.log(query_ret_pages[0].name);
+
+    // embed journel pages to this page
+    // logseq.Editor.updateBlock(targetBlock.uuid, getQueryScriptOTD());
+    for (var i=0; i < query_ret_pages.length; i++) {
+      // await logseq.Editor.insertBlock(page.uuid, "{{embed [["+query_ret_pages[i].name+"]]}}")
+      await logseq.Editor.appendBlockInPage(page.uuid, "{{embed [["+query_ret_pages[i].name+"]]}}");
+
+    }
+
+    // append an empty block to exit the edit mode
+    await logseq.Editor.appendBlockInPage(page.uuid, "");
+  }
+}
+
+
+function getTodayDict() {
+  const date = new Date();
+  const day = date.getDate();
+  const month = date.getMonth()+1;
+  const year = date.getFullYear();
+  return {year: year, month: month, day:day}
+}
+
+
+function previousDay(date) {
+  return {day: "30", month: "1", year: "2023"}
+}
+
+function nextDay(date){
+  return {day: "1", month: "2", year: "2023"}
+}
+
+/*
+* getOnThisDay(date)
+* The main function to generate contents on the On This Day page
+*
+* date:
+* - "Previous"
+* - "Next"
+* - "Today"
+*/
+async function getOnThisDay(showDate) {
 
   console.log("on-this-day plugin loaded.")
 
-  const queryScriptOTDPage = getQueryScriptOTDPageID();
-  const queryScriptOTD = getQueryScriptOTD();
+  
+  
   const pageTitle = logseq.settings.pageTitle;
+  const today = getTodayDict();
 
-  var page; // hold the "On This Day" page no matter it's a new page or existing page
+
+  
 
   try {
     // get the On This Day page
-    let ret = await logseq.DB.datascriptQuery(queryScriptOTDPage);
-    
-    if (ret.length < 1) {
-      // page does not exist
-      
-      // create page
-      page = await logseq.Editor.createPage(pageTitle,{},{format: "markdown", journal: false, createFirstBlock: false});
+    let page = await getOTDPage(); // hold the "On This Day" page no matter it's a new page or existing page
+    console.log("page")
+    console.log(page)
+    console.log(page.uuid)
 
+    let dateOnPage = getDateFromOTDPage(page); // e.g. 1/31/2023
+
+    // if dateOnPage == 0, geneate today
+    // if dateOnPage == today , skip, return
+    // if dateOnPage != today  
+    //    case showDate = "Previous", generate previous day of dateOnPage
+    //    case showDate = "Next", generate next day of dateOnpage
+    //    case showDate = "Today", geneate today
+
+    if (dateOnPage == 0) {
+      await generateOTDPage(today, page)
+    } else if (dateOnPage == today) {
+      return
     } else {
-      // page exists
-  
-      page = ret[0][0];
-
-      // open page
-      if (page && page.name) {
-        // console.log(page.name)
-        logseq.App.pushState("page", { name: page.name });
-      }
-
-      // remove all blocks on this page
-      const pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree()
-
-      for (var i=0; i < pageBlocksTree.length; i++) {
-        await logseq.Editor.removeBlock(pageBlocksTree[i].uuid);
+      switch (showDate) {
+        case "Previous":
+          await cleanBlocksOnCurrentPage();
+          await generateOTDPage(previousDay(dateOnPage), page);
+          break;
+        case "Next":
+          await cleanBlocksOnCurrentPage();
+          await generateOTDPage(previousDay(dateOnPage), page);
+          break;
+        case "Today":
+          await cleanBlocksOnCurrentPage();
+          await generateOTDPage(today, page);
+          break;
+        default:
+          console.log("Error: OTD: Should not enter this branch");
       }
     }
-
-    // add a block for today's date
-    const date = new Date();
-    const day = date.getDate();
-    const month = date.getMonth()+1;
-    const year = date.getFullYear();
-    await logseq.Editor.appendBlockInPage(page.uuid, `${month}/${day}/${year}`);
-
-
-      // query for journals on this day
-      let journal_query_ret = await logseq.DB.datascriptQuery(queryScriptOTD);
-      console.log("journal_query_ret")
-      console.log(journal_query_ret.length)
-      console.log(journal_query_ret)
-
-      if (journal_query_ret.length < 1) {
-        // No journals found
-        await logseq.Editor.appendBlockInPage(page.uuid, "No entries on this day");
-
-      } else {
-        // Some previous journals are found
-
-      const query_ret_pages = journal_query_ret?.flat();
-      console.log(query_ret_pages[0].name);
-
-      // embed journel pages to this page
-      // logseq.Editor.updateBlock(targetBlock.uuid, getQueryScriptOTD());
-      for (var i=0; i < query_ret_pages.length; i++) {
-        // await logseq.Editor.insertBlock(page.uuid, "{{embed [["+query_ret_pages[i].name+"]]}}")
-        await logseq.Editor.appendBlockInPage(page.uuid, "{{embed [["+query_ret_pages[i].name+"]]}}");
-
-      }
-
-      // append an empty block to exit the edit mode
-      await logseq.Editor.appendBlockInPage(page.uuid, "");
-
-      // insert means as a children (indented) block
-      // await logseq.Editor.exitEditingMode(); // this is not needed. It will add the block again.
-    
-      }
       
 
   } catch (err) {
@@ -181,7 +274,7 @@ async function getOnThisDay() {
 function main() {
   logseq.provideModel({
     handleOnThisDay() {
-      getOnThisDay();
+      getOnThisDay("Today");
     },
   });
 
@@ -213,6 +306,34 @@ function main() {
   //     getOnThisDay();
   //   }
   // );
+
+  logseq.App.registerCommandPalette(
+    {
+      key: "logseq-on-this-day-previous",
+      label: "Generate journals on this day for previous day",
+      keybinding: {
+        mode: "non-editing",
+        binding: "d p",
+      },
+    },
+    () => {
+      getOnThisDay("Previous");
+    }
+  );
+
+  logseq.App.registerCommandPalette(
+    {
+      key: "logseq-on-this-day-next",
+      label: "Generate journals on this day for next day",
+      keybinding: {
+        mode: "non-editing",
+        binding: "d n",
+      },
+    },
+    () => {
+      getOnThisDay("Next");
+    }
+  );
 
 }
 
