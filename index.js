@@ -41,7 +41,7 @@ function getQueryScriptOTD(date) {
   var queryTimeString = '(or';
 
   for (var i=startingYear; i<year; i++) {
-    const timeString = i + (month < 10 ? '0' : '') + month + day
+    const timeString = i + (month < 10 ? '0' : '') + month + (day < 10 ? '0' : '') + day
     queryTimeString += ` [(= ?d ${timeString})]`
   }
   queryTimeString += ")";
@@ -92,6 +92,8 @@ function getQueryScriptOTDPageID() {
 * Get the first block from On This Day page
 */
 function getDateFromOTDPage(OTDPage) {
+  // TODO
+
   // if OTD page is empty, return 0
   //return 0;
 
@@ -107,12 +109,14 @@ async function getOTDPage() {
   // get the On This Day page
   let ret = await logseq.DB.datascriptQuery(queryScriptOTDPage);
   var page;
+  var date = {};
     
   if (ret.length < 1) {
     // page does not exist
     
     // create page
     page = await logseq.Editor.createPage(pageTitle,{},{format: "markdown", journal: false, createFirstBlock: false});
+    date = null
 
   } else {
     // page exists
@@ -124,9 +128,25 @@ async function getOTDPage() {
       // console.log(page.name)
       logseq.App.pushState("page", { name: page.name });
     }
-  }
 
-  return page;
+    // get first block
+    const pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree();
+    console.log("pageBlocksTree")
+    console.log(pageBlocksTree)
+    if (pageBlocksTree.length >= 1)  {
+      // const dateBlock = await logseq.Editor.getBlock(pageBlocksTree[0][0]);
+      const dateBlock = pageBlocksTree[0]
+      console.log(dateBlock)
+      const dateArray = dateBlock.content.split("/");
+      date = {day: dateArray[1], month: dateArray[0], year: dateArray[2]};
+    } else {
+      date = null
+    }
+
+  
+  }
+  return {page: page, date: date}
+
 
 }
 
@@ -147,7 +167,7 @@ async function generateOTDPage(date, page) {
   console.log("queryScriptOTD")
   console.log(queryScriptOTD)
 
-  // add a block for date
+  // add a lock for date
   const dateString = `${date.month}/${date.day}/${date.year}`;
   console.log("dateString")
   console.log(dateString)
@@ -194,10 +214,12 @@ function getTodayDict() {
 
 
 function previousDay(date) {
+  //TODO
   return {day: "30", month: "1", year: "2023"}
 }
 
 function nextDay(date){
+  //TODO
   return {day: "1", month: "2", year: "2023"}
 }
 
@@ -224,12 +246,16 @@ async function getOnThisDay(showDate) {
 
   try {
     // get the On This Day page
-    let page = await getOTDPage(); // hold the "On This Day" page no matter it's a new page or existing page
+    const pageDate = await getOTDPage(); // hold the "On This Day" page no matter it's a new page or existing page
+    const page = pageDate.page;
+    const date = pageDate.date;
     console.log("page")
     console.log(page)
     console.log(page.uuid)
+    console.log("date")
+    console.log(date)
 
-    let dateOnPage = getDateFromOTDPage(page); // e.g. 1/31/2023
+    let dateOnPage = getDateFromOTDPage(page); // e.g. 1/31/2023 or 0 for empty
 
     // if dateOnPage == 0, geneate today
     // if dateOnPage == today , skip, return
