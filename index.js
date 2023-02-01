@@ -33,9 +33,9 @@ function getQueryScriptOTD(date) {
 
   console.log(date);
 
-  const day = date.day;
-  const month = date.month;
-  const year = date.year;
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
   // const dmy = `${day}/${month}/${year}`;
 
   var queryTimeString = '(or';
@@ -86,37 +86,28 @@ function getQueryScriptOTDPageID() {
   return (queryString);  
 }
 
+
+
 /*
-* getDateFromOTDPage(OTDPageID)
 * 
-* Get the first block from On This Day page
+* return
+* - page
+* - dateOnPage
 */
-function getDateFromOTDPage(OTDPage) {
-  // TODO
-
-  // if OTD page is empty, return 0
-  //return 0;
-
-  // if OTD page has date on first block, return date string
-  return {year:"2023", month:"1", day:"31"}
-
-}
-
-
 async function getOTDPage() {
   const pageTitle = logseq.settings.pageTitle;
   const queryScriptOTDPage = getQueryScriptOTDPageID();
   // get the On This Day page
   let ret = await logseq.DB.datascriptQuery(queryScriptOTDPage);
   var page;
-  var date = {};
+  var dateOnPage = {};
     
   if (ret.length < 1) {
     // page does not exist
     
     // create page
     page = await logseq.Editor.createPage(pageTitle,{},{format: "markdown", journal: false, createFirstBlock: false});
-    date = null
+    dateOnPage = null
 
   } else {
     // page exists
@@ -137,15 +128,16 @@ async function getOTDPage() {
       // const dateBlock = await logseq.Editor.getBlock(pageBlocksTree[0][0]);
       const dateBlock = pageBlocksTree[0]
       console.log(dateBlock)
-      const dateArray = dateBlock.content.split("/");
-      date = {day: dateArray[1], month: dateArray[0], year: dateArray[2]};
+      dateOnPage = new Date(dateBlock.content)
+      // const dateArray = dateBlock.content.split("/");
+      // date = {day: dateArray[1], month: dateArray[0], year: dateArray[2]};
     } else {
-      date = null
+      dateOnPage = null
     }
 
   
   }
-  return {page: page, date: date}
+  return {page: page, dateOnPage: dateOnPage}
 
 
 }
@@ -163,12 +155,17 @@ async function cleanBlocksOnCurrentPage() {
 
 async function generateOTDPage(date, page) {
 
+  console.log("generateOTDPage()")
+  console.log("date")
+  console.log(date)
+
   const queryScriptOTD = getQueryScriptOTD(date);
   console.log("queryScriptOTD")
   console.log(queryScriptOTD)
 
   // add a lock for date
-  const dateString = `${date.month}/${date.day}/${date.year}`;
+
+  const dateString = date.toISOString().split("T")[0];
   console.log("dateString")
   console.log(dateString)
   await logseq.Editor.appendBlockInPage(page.uuid, dateString);
@@ -200,6 +197,9 @@ async function generateOTDPage(date, page) {
 
     // append an empty block to exit the edit mode
     await logseq.Editor.appendBlockInPage(page.uuid, "");
+
+    // exit editing mode
+    await logseq.Editor.exitEditingMode();
   }
 }
 
@@ -212,15 +212,36 @@ function getTodayDict() {
   return {year: year, month: month, day:day}
 }
 
-
+/*
+* date: Date() object
+*/
 function previousDay(date) {
   //TODO
-  return {day: "30", month: "1", year: "2023"}
+  // let previousDay = new Date(date.year, date.month - 1, date.day);
+  // previousDay.setDate(previousDay.getDate() - 1);
+  // return {day: "30", month: "1", year: "2023"}
+  console.log("previousDay")
+  console.log(date)
+
+  let previous = new Date(date.getTime());
+  previous.setDate(date.getDate() -1);
+
+  console.log(previous)
+
+  return previous;
 }
 
 function nextDay(date){
   //TODO
-  return {day: "1", month: "2", year: "2023"}
+  console.log("nextDay")
+  console.log(date)
+
+  let next = new Date(date.getTime());
+  next.setDate(date.getDate() + 1);
+
+  console.log(next)
+
+  return next;
 }
 
 /*
@@ -239,23 +260,23 @@ async function getOnThisDay(showDate) {
   
   
   const pageTitle = logseq.settings.pageTitle;
-  const today = getTodayDict();
+  const today = new Date();
 
 
   
 
   try {
-    // get the On This Day page
+    // get the On This Day page and the date on this page
     const pageDate = await getOTDPage(); // hold the "On This Day" page no matter it's a new page or existing page
     const page = pageDate.page;
-    const date = pageDate.date;
+    const dateOnPage = pageDate.dateOnPage;
+
     console.log("page")
     console.log(page)
     console.log(page.uuid)
-    console.log("date")
-    console.log(date)
+    console.log("dateOnPage")
+    console.log(dateOnPage)
 
-    let dateOnPage = getDateFromOTDPage(page); // e.g. 1/31/2023 or 0 for empty
 
     // if dateOnPage == 0, geneate today
     // if dateOnPage == today , skip, return
@@ -264,9 +285,11 @@ async function getOnThisDay(showDate) {
     //    case showDate = "Next", generate next day of dateOnpage
     //    case showDate = "Today", geneate today
 
-    if (dateOnPage == 0) {
+    if (dateOnPage == null) {
       await generateOTDPage(today, page)
-    } else if (dateOnPage == today) {
+    } else if (dateOnPage.getFullYear() == today.getFullYear && 
+              dateOnPage.getMonth()     == today.getMonth() && 
+              dateOnPage.getDate()      == today.getDate()) {
       return
     } else {
       switch (showDate) {
@@ -276,7 +299,7 @@ async function getOnThisDay(showDate) {
           break;
         case "Next":
           await cleanBlocksOnCurrentPage();
-          await generateOTDPage(previousDay(dateOnPage), page);
+          await generateOTDPage(nextDay(dateOnPage), page);
           break;
         case "Today":
           await cleanBlocksOnCurrentPage();
