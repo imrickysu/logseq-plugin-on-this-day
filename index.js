@@ -325,10 +325,29 @@ function main() {
     handleOnThisDay() {
       getOnThisDay("Today");
     },
+    handlePrevious() {
+      getOnThisDay("Previous");
+    },
+    handleNext() {
+      getOnThisDay("Next");
+    },
+  });
+
+
+
+  logseq.App.registerUIItem("toolbar", {
+    key: "on-this-day-1",
+    template: `
+      <span class="on-this-day-previous">
+        <a title="Previous" class="button" data-on-click="handlePrevious">
+          <i class="ti ti-arrow-move-left"></i>
+        </a>
+      </span>
+    `,
   });
 
   logseq.App.registerUIItem("toolbar", {
-    key: "on-this-day",
+    key: "on-this-day-2",
     template: `
       <span class="on-this-day">
         <a title="On This Day" class="button" data-on-click="handleOnThisDay">
@@ -337,6 +356,18 @@ function main() {
       </span>
     `,
   });
+
+  logseq.App.registerUIItem("toolbar", {
+    key: "on-this-day-3",
+    template: `
+      <span class="on-this-day-next">
+        <a title="next" class="button" data-on-click="handleNext">
+          <i class="ti ti-arrow-move-right"></i>
+        </a>
+      </span>
+    `,
+  });
+
 
   // -----
   // change shortcut key later
