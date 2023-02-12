@@ -104,7 +104,58 @@ function getQueryScriptOTDPageID() {
   return (queryString);  
 }
 
+function getQueryScriptPN(journalDate, showDate) {
+  // generate query string for all journal before or after journalDate
 
+  console.log(journalDate);
+
+  // const day = date.getDate();
+  // const month = date.getMonth() + 1;
+  // const year = date.getFullYear();
+  // const dmy = `${day}/${month}/${year}`;
+
+  var instruction;
+  if (showDate == "Previous") {
+    instruction = "<"; 
+  } 
+  else if (showDate == "Next") {
+    instruction = ">";
+  }
+  else {
+    console.log("error: unsupported date");
+    return
+  }
+
+  var queryTimeString = `[(${instruction} ?d ${journalDate})]`;
+  console.log(queryTimeString)
+
+  // queryTimeString example: (or [(= ?d 20100126)] [(= ?d 20110126)] [(= ?d 20120126)] [(= ?d 20130126)] [(= ?d 20140126)] [(= ?d 20150126)] [(= ?d 20160126)] [(= ?d 20170126)] [(= ?d 20180126)] [(= ?d 20190126)] [(= ?d 20200126)] [(= ?d 20210126)] [(= ?d 20220126)])
+
+  // [:find (pull ?b [*])
+  // :in $ ?current-page ?start ?today
+  // :where
+  // [?b :block/page ?p]
+  // [?p :page/journal? true]
+  // [?p :page/journal-day ?d]
+  
+  //  [(< ?d 20230111)]
+
+  // ]
+
+
+  return (
+    `
+      [
+      :find (pull ?p [*])
+      :where
+      [?b :block/page ?p]
+      [?p :block/journal? true]
+      [?p :block/journal-day ?d]
+      ${queryTimeString}           
+      ]
+    `
+  )
+}
 
 /*
 * 
@@ -355,6 +406,77 @@ async function getOnThisDay(showDate) {
   }
 }
 
+async function jump(journalDay, showDate)
+{
+  // assume this is a journal page
+  // show the previous journal or next journal of journalDay according to showDate
+  // journalDay format 20230123
+  const queryString = getQueryScriptPN(journalDay, showDate)
+  let jump_query_ret = await logseq.DB.datascriptQuery(queryString);
+  console.log("jump_query_ret")
+  console.log(jump_query_ret.length)
+  console.log(jump_query_ret)
+  
+  const journals = jump_query_ret?.flat();
+  console.log(journals)
+  
+  var tmpJournal;
+  if (showDate == "Previous") {
+    tmpJournal = journals.reduce((tmpJournal, currentJournal) => {
+    if (currentJournal["journal-day"] > tmpJournal["journal-day"]) {
+      return currentJournal;
+    }
+    return tmpJournal;
+    });
+  } else if (showDate == "Next") {
+    tmpJournal = journals.reduce((tmpJournal, currentJournal) => {
+      if (currentJournal["journal-day"] < tmpJournal["journal-day"]) {
+        return currentJournal;
+      }
+      return tmpJournal;
+      });
+  } else {
+    console.log("Error: wrong showDate instruction");
+  }
+
+  console.log(tmpJournal)
+
+  if (tmpJournal && tmpJournal.name) {
+    logseq.App.pushState("page", { name: tmpJournal.name });
+  }
+
+
+}
+
+
+async function adaptiveJump(showDate)
+{
+  const pageTitle = logseq.settings.pageTitle;
+  //getCurrentPageType
+  console.log("console.log");
+  const currentPage = await logseq.Editor.getCurrentPage();
+  const curPageIsJournal = currentPage["journal?"];
+  const curPageIsOTD = currentPage["originalName"] == pageTitle ? true : false;
+  console.log(curPageIsJournal);
+  console.log(currentPage)
+  console.log(curPageIsOTD)
+
+  if (curPageIsJournal) {
+    jump(currentPage.journalDay, showDate);
+  }
+  else if (curPageIsOTD) {
+    getOnThisDay(showDate);
+  }
+  else {
+    return;
+  }
+
+
+}
+
+
+
+
 function main() {
   const enableJump = logseq.settings.enableJump;
   const jumpButtonPosition = logseq.settings.jumpButtonPosition;
@@ -365,10 +487,12 @@ function main() {
       getOnThisDay("Today");
     },
     handlePrevious() {
-      getOnThisDay("Previous");
+      // getOnThisDay("Previous");
+      adaptiveJump("Previous");
     },
     handleNext() {
-      getOnThisDay("Next");
+      // getOnThisDay("Next");
+      adaptiveJump("Next");
     },
   });
 
