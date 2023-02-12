@@ -14,6 +14,24 @@ const settingsTemplate = [
     default: "On This Day",
     title: "Page title for the On This Day page",
     description: "Specify if you wish to change the page title. It's valid to use non-English characters. Warning: existing contents on this page will be removed every time."
+  },
+  {
+    key: "enableJump",
+    type: "boolean",
+    default: false,
+    title: "Jumping to previous day or next day on the On This Day page",
+    description: "Check what's going on on the previous day or the next day.\n\
+    Two buttons will show on the upper right corner for controlling.\n\
+    Reload this plugin to make changes take effect.",
+  },
+  {
+    key: "jumpButtonPosition",
+    type: "enum",
+    default: "pagebar",
+    enumChoices: ["pagebar", "toolbar"],
+    enumPicker: "radio",
+    title: "Where you wish to place the jump buttons",
+    description: "pagebar: display on each page; toolbar: display with the On-This-Day button. Valid only when jumpping is enabled. \n\rReload this plugin to make changes take effect.",
   }
 ];
 
@@ -40,7 +58,7 @@ function getQueryScriptOTD(date) {
 
   var queryTimeString = '(or';
 
-  for (var i=startingYear; i<year; i++) {
+  for (var i=startingYear; i<=year; i++) {
     const timeString = i + (month < 10 ? '0' : '') + month + (day < 10 ? '0' : '') + day
     queryTimeString += ` [(= ?d ${timeString})]`
   }
@@ -144,7 +162,7 @@ async function getOTDPage() {
 
 async function cleanBlocksOnCurrentPage() {
   // remove all blocks on this page
-  const pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree()
+  const pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree();
 
   for (var i=0; i < pageBlocksTree.length; i++) {
     await logseq.Editor.removeBlock(pageBlocksTree[i].uuid);
@@ -198,8 +216,10 @@ async function generateOTDPage(date, page) {
     // append an empty block to exit the edit mode
     await logseq.Editor.appendBlockInPage(page.uuid, "");
 
-    // exit editing mode
-    await logseq.Editor.exitEditingMode();
+    // exit editing mode and 
+    await logseq.Editor.exitEditingMode(true);
+    const pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree();
+    logseq.Editor.scrollToBlockInPage(page.name, pageBlocksTree[0].uuid);
   }
 }
 
@@ -216,10 +236,7 @@ function getTodayDict() {
 * date: Date() object
 */
 function previousDay(date) {
-  //TODO
-  // let previousDay = new Date(date.year, date.month - 1, date.day);
-  // previousDay.setDate(previousDay.getDate() - 1);
-  // return {day: "30", month: "1", year: "2023"}
+
   console.log("previousDay")
   console.log(date)
 
@@ -232,7 +249,7 @@ function previousDay(date) {
 }
 
 function nextDay(date){
-  //TODO
+
   console.log("nextDay")
   console.log(date)
 
@@ -257,15 +274,32 @@ async function getOnThisDay(showDate) {
 
   console.log("on-this-day plugin loaded.")
 
-  
-  
   const pageTitle = logseq.settings.pageTitle;
   const today = new Date();
 
-
-  
-
   try {
+    // TODO
+
+    // if current page is normal page
+    //  dateOnPage = Null
+    // - OTD: generate for today
+    // - Previous/Next: do nothing
+    // if current page is journal
+    //  dateOnPage = journal date; only use getOTDPage() to get the page
+    // - OTD: generate for today
+    // - Pre/Next: generate for dateOnPage -1/+1
+    // if current page is On This Day Page
+    //  use getOTDPage() to get the page and the date
+    // - OTD: generate for today
+    // - Pre/Next: generate for dateOnPage -1/+1
+
+    // currentPage = get current page
+    // isJournal -> true/false
+    //    true: dateOnPage = Journal date
+    //    false: getOTDPage(), page = currentPage?
+    //        true: current page is OTD page, 
+    //        false: current page is not OTD page; dateOnPage = Null
+
     // get the On This Day page and the date on this page
     const pageDate = await getOTDPage(); // hold the "On This Day" page no matter it's a new page or existing page
     const page = pageDate.page;
@@ -286,6 +320,7 @@ async function getOnThisDay(showDate) {
     //    case showDate = "Today", geneate today
 
     if (dateOnPage == null) {
+      // new page
       await generateOTDPage(today, page)
     } else if (dateOnPage.getFullYear() == today.getFullYear && 
               dateOnPage.getMonth()     == today.getMonth() && 
@@ -321,6 +356,10 @@ async function getOnThisDay(showDate) {
 }
 
 function main() {
+  const enableJump = logseq.settings.enableJump;
+  const jumpButtonPosition = logseq.settings.jumpButtonPosition;
+
+  // Register model
   logseq.provideModel({
     handleOnThisDay() {
       getOnThisDay("Today");
@@ -333,18 +372,19 @@ function main() {
     },
   });
 
-
-
-  logseq.App.registerUIItem("toolbar", {
-    key: "on-this-day-1",
-    template: `
-      <span class="on-this-day-previous">
-        <a title="Previous" class="button" data-on-click="handlePrevious">
-          <i class="ti ti-arrow-move-left"></i>
-        </a>
-      </span>
-    `,
-  });
+  // register UI
+  if (enableJump) {
+    logseq.App.registerUIItem(jumpButtonPosition, {
+      key: "on-this-day-1",
+      template: `
+        <span class="on-this-day-previous">
+          <a title="Previous" class="button" data-on-click="handlePrevious">
+            <i class="ti ti-arrow-move-left"></i>
+          </a>
+        </span>
+      `,
+    });
+  }
 
   logseq.App.registerUIItem("toolbar", {
     key: "on-this-day-2",
@@ -357,36 +397,20 @@ function main() {
     `,
   });
 
-  logseq.App.registerUIItem("toolbar", {
-    key: "on-this-day-3",
-    template: `
-      <span class="on-this-day-next">
-        <a title="next" class="button" data-on-click="handleNext">
-          <i class="ti ti-arrow-move-right"></i>
-        </a>
-      </span>
-    `,
-  });
+  if (enableJump) {
+    logseq.App.registerUIItem(jumpButtonPosition, {
+      key: "on-this-day-3",
+      template: `
+        <span class="on-this-day-next">
+          <a title="Next" class="button" data-on-click="handleNext">
+            <i class="ti ti-arrow-move-right"></i>
+          </a>
+        </span>
+      `,
+    });
+  }
 
-
-  // -----
-  // change shortcut key later
-  // -----
-
-  // logseq.App.registerCommandPalette(
-  //   {
-  //     key: "logseq-random-note",
-  //     label: "Random note => Let's go",
-  //     keybinding: {
-  //       mode: "non-editing",
-  //       binding: "y t",
-  //     },
-  //   },
-  //   () => {
-  //     getOnThisDay();
-  //   }
-  // );
-
+  // register shortcut keys
   logseq.App.registerCommandPalette(
     {
       key: "logseq-on-this-day-previous",
@@ -415,7 +439,7 @@ function main() {
     }
   );
 
-}
+} // end of main()
 
 // Run main function, catch errors in the end
 logseq.ready(main).catch(console.error);
