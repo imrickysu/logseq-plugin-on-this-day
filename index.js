@@ -545,7 +545,7 @@ function main() {
       },
     },
     () => {
-      getOnThisDay("Previous");
+      adaptiveJump("Previous");
     }
   );
 
@@ -559,7 +559,7 @@ function main() {
       },
     },
     () => {
-      getOnThisDay("Next");
+      adaptiveJump("Next");
     }
   );
 
