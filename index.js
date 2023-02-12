@@ -63,7 +63,7 @@ function getQueryScriptOTD(date) {
     queryTimeString += ` [(= ?d ${timeString})]`
   }
   queryTimeString += ")";
-  console.log(queryTimeString)
+  // console.log(queryTimeString)
 
   // queryTimeString example: (or [(= ?d 20100126)] [(= ?d 20110126)] [(= ?d 20120126)] [(= ?d 20130126)] [(= ?d 20140126)] [(= ?d 20150126)] [(= ?d 20160126)] [(= ?d 20170126)] [(= ?d 20180126)] [(= ?d 20190126)] [(= ?d 20200126)] [(= ?d 20210126)] [(= ?d 20220126)])
 
@@ -100,7 +100,7 @@ function getQueryScriptOTDPageID() {
             ${blockNameQueryString}
           ]
   `;
-  console.log(queryString)
+  // console.log(queryString)
   return (queryString);  
 }
 
@@ -323,7 +323,7 @@ function nextDay(date){
 */
 async function getOnThisDay(showDate) {
 
-  console.log("on-this-day plugin loaded.")
+  // console.log("on-this-day plugin loaded.")
 
   const pageTitle = logseq.settings.pageTitle;
   const today = new Date();
