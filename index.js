@@ -22,7 +22,7 @@ const settingsTemplate = [
     title: "Jumping to previous day or next day on the On This Day page",
     description: "Check what's going on on the previous day or the next day.\n\
     Two buttons will show on the upper right corner for controlling.\n\
-    Reload this plugin to make changes take effect.",
+    Restart Logseq to make changes take effect.",
   },
   {
     key: "jumpButtonPosition",
@@ -31,7 +31,7 @@ const settingsTemplate = [
     enumChoices: ["pagebar", "toolbar"],
     enumPicker: "radio",
     title: "Where you wish to place the jump buttons",
-    description: "pagebar: display on each page; toolbar: display with the On-This-Day button. Valid only when jumpping is enabled. \n\rReload this plugin to make changes take effect.",
+    description: "pagebar: display on each page; toolbar: display with the On-This-Day button. Valid only when jumpping is enabled. \n\rRestart Logseq to make changes take effect.",
   }
 ];
 
@@ -461,35 +461,6 @@ function main() {
       `,
     });
   }
-
-  // register shortcut keys
-  logseq.App.registerCommandPalette(
-    {
-      key: "logseq-on-this-day-previous",
-      label: "Generate journals on this day for previous day",
-      keybinding: {
-        mode: "non-editing",
-        binding: "d p",
-      },
-    },
-    () => {
-      adaptiveJump("Previous");
-    }
-  );
-
-  logseq.App.registerCommandPalette(
-    {
-      key: "logseq-on-this-day-next",
-      label: "Generate journals on this day for next day",
-      keybinding: {
-        mode: "non-editing",
-        binding: "d n",
-      },
-    },
-    () => {
-      adaptiveJump("Next");
-    }
-  );
 
 } // end of main()
 
