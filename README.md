@@ -25,3 +25,10 @@ On the plugin settings page, you can customize the following settings for this p
 
 * startingYear: Specify the starting year you wish to view on the On This Day page (till now). Journals before this year will be skipped.
 * pageTitle: You can customize the page title. It's valid to use non-English characters. Warning: existing contents on this page will be removed every time.
+* enableJump: Jump to previous day or next day on the On This Day page or a Journal page. When this option is enabled, you will see two addtional arrow buttons. Clicking an arrow button can jump to previous day or next day.
+* jumpButtonPosition: Where to put the jump buttons? Since there could be many buttons on the toolbar, to prevent confusion, the arrow buttons are placed to the pagebar by default. You can change this setting to the toolbar. This settings is only valid when enableJump is selected.
+
+
+### Recent Changes
+
+0.0.3: add capability to jump to previous day or next day. Default off. Please enable manually in the settings page.
