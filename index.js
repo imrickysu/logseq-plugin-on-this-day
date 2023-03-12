@@ -49,8 +49,6 @@ function getQueryScriptOTD(date) {
   const startingYear = logseq.settings.startingYear;
   //TODO: check this string is a valid string for year and should be smaller than the current year
 
-  console.log(date);
-
   const day = date.getDate();
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
@@ -63,7 +61,6 @@ function getQueryScriptOTD(date) {
     queryTimeString += ` [(= ?d ${timeString})]`
   }
   queryTimeString += ")";
-  // console.log(queryTimeString)
 
   // queryTimeString example: (or [(= ?d 20100126)] [(= ?d 20110126)] [(= ?d 20120126)] [(= ?d 20130126)] [(= ?d 20140126)] [(= ?d 20150126)] [(= ?d 20160126)] [(= ?d 20170126)] [(= ?d 20180126)] [(= ?d 20190126)] [(= ?d 20200126)] [(= ?d 20210126)] [(= ?d 20220126)])
 
@@ -100,14 +97,11 @@ function getQueryScriptOTDPageID() {
             ${blockNameQueryString}
           ]
   `;
-  // console.log(queryString)
   return (queryString);  
 }
 
 function getQueryScriptPN(journalDate, showDate) {
   // generate query string for all journal before or after journalDate
-
-  console.log(journalDate);
 
   // const day = date.getDate();
   // const month = date.getMonth() + 1;
@@ -185,28 +179,25 @@ async function getOTDPage() {
 
     // open page
     if (page && page.name) {
-      // console.log(page.name)
       logseq.App.pushState("page", { name: page.name });
     }
 
     // get first block
     const pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree();
-    console.log("pageBlocksTree")
-    console.log(pageBlocksTree)
+
     if (pageBlocksTree.length >= 1)  {
       // const dateBlock = await logseq.Editor.getBlock(pageBlocksTree[0][0]);
-      const dateBlock = pageBlocksTree[0]
-      console.log(dateBlock)
-      dateOnPage = new Date(dateBlock.content)
+      const dateBlock = pageBlocksTree[0];
+      dateOnPage = new Date(dateBlock.content);
       // const dateArray = dateBlock.content.split("/");
       // date = {day: dateArray[1], month: dateArray[0], year: dateArray[2]};
     } else {
-      dateOnPage = null
+      dateOnPage = null;
     }
 
   
   }
-  return {page: page, dateOnPage: dateOnPage}
+  return {page: page, dateOnPage: dateOnPage};
 
 
 }
@@ -224,27 +215,15 @@ async function cleanBlocksOnCurrentPage() {
 
 async function generateOTDPage(date, page) {
 
-  console.log("generateOTDPage()")
-  console.log("date")
-  console.log(date)
-
   const queryScriptOTD = getQueryScriptOTD(date);
-  console.log("queryScriptOTD")
-  console.log(queryScriptOTD)
 
   // add a lock for date
 
   const dateString = date.toISOString().split("T")[0];
-  console.log("dateString")
-  console.log(dateString)
   await logseq.Editor.appendBlockInPage(page.uuid, dateString);
-  console.log("append date complete")
 
   // query for journals on this day
   let journal_query_ret = await logseq.DB.datascriptQuery(queryScriptOTD);
-  console.log("journal_query_ret")
-  console.log(journal_query_ret.length)
-  console.log(journal_query_ret)
 
   if (journal_query_ret.length < 1) {
     // No journals found
@@ -254,7 +233,6 @@ async function generateOTDPage(date, page) {
     // Some previous journals are found
 
     const query_ret_pages = journal_query_ret?.flat();
-    console.log(query_ret_pages[0].name);
 
     // embed journel pages to this page
     // logseq.Editor.updateBlock(targetBlock.uuid, getQueryScriptOTD());
@@ -288,26 +266,16 @@ function getTodayDict() {
 */
 function previousDay(date) {
 
-  console.log("previousDay")
-  console.log(date)
-
   let previous = new Date(date.getTime());
   previous.setDate(date.getDate() -1);
-
-  console.log(previous)
 
   return previous;
 }
 
 function nextDay(date){
 
-  console.log("nextDay")
-  console.log(date)
-
   let next = new Date(date.getTime());
   next.setDate(date.getDate() + 1);
-
-  console.log(next)
 
   return next;
 }
@@ -323,45 +291,15 @@ function nextDay(date){
 */
 async function getOnThisDay(showDate) {
 
-  // console.log("on-this-day plugin loaded.")
-
   const pageTitle = logseq.settings.pageTitle;
   const today = new Date();
 
   try {
-    // TODO
-
-    // if current page is normal page
-    //  dateOnPage = Null
-    // - OTD: generate for today
-    // - Previous/Next: do nothing
-    // if current page is journal
-    //  dateOnPage = journal date; only use getOTDPage() to get the page
-    // - OTD: generate for today
-    // - Pre/Next: generate for dateOnPage -1/+1
-    // if current page is On This Day Page
-    //  use getOTDPage() to get the page and the date
-    // - OTD: generate for today
-    // - Pre/Next: generate for dateOnPage -1/+1
-
-    // currentPage = get current page
-    // isJournal -> true/false
-    //    true: dateOnPage = Journal date
-    //    false: getOTDPage(), page = currentPage?
-    //        true: current page is OTD page, 
-    //        false: current page is not OTD page; dateOnPage = Null
-
+  
     // get the On This Day page and the date on this page
     const pageDate = await getOTDPage(); // hold the "On This Day" page no matter it's a new page or existing page
     const page = pageDate.page;
     const dateOnPage = pageDate.dateOnPage;
-
-    console.log("page")
-    console.log(page)
-    console.log(page.uuid)
-    console.log("dateOnPage")
-    console.log(dateOnPage)
-
 
     // if dateOnPage == 0, geneate today
     // if dateOnPage == today , skip, return
@@ -411,14 +349,10 @@ async function jump(journalDay, showDate)
   // assume this is a journal page
   // show the previous journal or next journal of journalDay according to showDate
   // journalDay format 20230123
-  const queryString = getQueryScriptPN(journalDay, showDate)
+  const queryString = getQueryScriptPN(journalDay, showDate);
   let jump_query_ret = await logseq.DB.datascriptQuery(queryString);
-  console.log("jump_query_ret")
-  console.log(jump_query_ret.length)
-  console.log(jump_query_ret)
-  
+ 
   const journals = jump_query_ret?.flat();
-  console.log(journals)
   
   var tmpJournal;
   if (showDate == "Previous") {
@@ -439,8 +373,6 @@ async function jump(journalDay, showDate)
     console.log("Error: wrong showDate instruction");
   }
 
-  console.log(tmpJournal)
-
   if (tmpJournal && tmpJournal.name) {
     logseq.App.pushState("page", { name: tmpJournal.name });
   }
@@ -453,13 +385,9 @@ async function adaptiveJump(showDate)
 {
   const pageTitle = logseq.settings.pageTitle;
   //getCurrentPageType
-  console.log("console.log");
   const currentPage = await logseq.Editor.getCurrentPage();
   const curPageIsJournal = currentPage["journal?"];
   const curPageIsOTD = currentPage["originalName"] == pageTitle ? true : false;
-  console.log(curPageIsJournal);
-  console.log(currentPage)
-  console.log(curPageIsOTD)
 
   if (curPageIsJournal) {
     jump(currentPage.journalDay, showDate);
