@@ -1,6 +1,6 @@
 {
   "name": "logseq-on-this-day",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "author": "imrickysu",
   "main": "dist/index.html",
   "description": "Review previous journals on this day.",
@@ -13,8 +13,7 @@
     "id": "logseq-on-this-day"
   },
   "dependencies": {
-    "@logseq/libs": "^0.0.1-alpha.35",
-    "yarn": "^1.22.19"
+    "@logseq/libs": "^0.0.17"
   },
   "devDependencies": {
     "parcel-bundler": "^1.12.5"

@@ -37,7 +37,43 @@ const settingsTemplate = [
 
 logseq.useSettingsSchema(settingsTemplate);
 
+/*
+* validateSettings()
+* Validates plugin settings and returns corrected values if needed
+*/
+function validateSettings() {
+  const settings = logseq.settings;
+  let isValid = true;
 
+  // Validate startingYear
+  const yearNum = parseInt(settings.startingYear, 10);
+  const currentYear = new Date().getFullYear();
+  const MIN_YEAR = 1900;
+
+  if (isNaN(yearNum) || yearNum < MIN_YEAR || yearNum > currentYear) {
+    logseq.App.showMsg(
+      `Invalid starting year: ${settings.startingYear}. Must be between ${MIN_YEAR} and ${currentYear}. Using 2010 as default.`,
+      "warning"
+    );
+    // Note: We can't directly modify settings, but we'll return the corrected value
+    isValid = false;
+  }
+
+  // Validate pageTitle
+  if (!settings.pageTitle || settings.pageTitle.trim() === "") {
+    logseq.App.showMsg(
+      "Page title cannot be empty. Using 'On This Day' as default.",
+      "warning"
+    );
+    isValid = false;
+  }
+
+  return {
+    isValid,
+    startingYear: (isNaN(yearNum) || yearNum < MIN_YEAR || yearNum > currentYear) ? "2010" : settings.startingYear,
+    pageTitle: (!settings.pageTitle || settings.pageTitle.trim() === "") ? "On This Day" : settings.pageTitle
+  };
+}
 
 
 
@@ -46,8 +82,8 @@ logseq.useSettingsSchema(settingsTemplate);
 * This function generates the query string to find the On This Day page
 */
 function getQueryScriptOTD(date) {
-  const startingYear = logseq.settings.startingYear;
-  //TODO: check this string is a valid string for year and should be smaller than the current year
+  const validatedSettings = validateSettings();
+  const startingYear = validatedSettings.startingYear;
 
   const day = date.getDate();
   const month = date.getMonth() + 1;
@@ -84,8 +120,9 @@ function getQueryScriptOTD(date) {
 * Note: Today this year is not included.
 */
 function getQueryScriptOTDPageID() {
-  const pageTitle = logseq.settings.pageTitle;
-  const pageTitleLowerCase = logseq.settings.pageTitle.toLowerCase();
+  const validatedSettings = validateSettings();
+  const pageTitle = validatedSettings.pageTitle;
+  const pageTitleLowerCase = validatedSettings.pageTitle.toLowerCase();
 
   const blockNameQueryString = `[?p :block/name "` + pageTitleLowerCase + `"]`;
   
@@ -116,12 +153,11 @@ function getQueryScriptPN(journalDate, showDate) {
     instruction = ">";
   }
   else {
-    console.log("error: unsupported date");
+    console.error("Error: Unsupported date direction:", showDate);
     return
   }
 
   var queryTimeString = `[(${instruction} ?d ${journalDate})]`;
-  console.log(queryTimeString)
 
   // queryTimeString example: (or [(= ?d 20100126)] [(= ?d 20110126)] [(= ?d 20120126)] [(= ?d 20130126)] [(= ?d 20140126)] [(= ?d 20150126)] [(= ?d 20160126)] [(= ?d 20170126)] [(= ?d 20180126)] [(= ?d 20190126)] [(= ?d 20200126)] [(= ?d 20210126)] [(= ?d 20220126)])
 
@@ -291,7 +327,8 @@ function nextDay(date){
 */
 async function getOnThisDay(showDate) {
 
-  const pageTitle = logseq.settings.pageTitle;
+  const validatedSettings = validateSettings();
+  const pageTitle = validatedSettings.pageTitle;
   const today = new Date();
 
   try {
@@ -311,8 +348,8 @@ async function getOnThisDay(showDate) {
     if (dateOnPage == null) {
       // new page
       await generateOTDPage(today, page)
-    } else if (dateOnPage.getFullYear() == today.getFullYear && 
-              dateOnPage.getMonth()     == today.getMonth() && 
+    } else if (dateOnPage.getFullYear() == today.getFullYear() &&
+              dateOnPage.getMonth()     == today.getMonth() &&
               dateOnPage.getDate()      == today.getDate()) {
       return
     } else {
@@ -330,17 +367,17 @@ async function getOnThisDay(showDate) {
           await generateOTDPage(today, page);
           break;
         default:
-          console.log("Error: OTD: Should not enter this branch");
+          console.error("Error: OTD: Invalid showDate value:", showDate);
       }
     }
-      
+
 
   } catch (err) {
     logseq.App.showMsg(
-      err.message || "Maybe something wrong with the query",
+      err.message || "Error generating On This Day page. Please check console for details.",
       "error"
     );
-    console.log(err);
+    console.error("On This Day error:", err);
   }
 }
 
@@ -370,7 +407,7 @@ async function jump(journalDay, showDate)
       return tmpJournal;
       });
   } else {
-    console.log("Error: wrong showDate instruction");
+    console.error("Error: Invalid showDate instruction:", showDate);
   }
 
   if (tmpJournal && tmpJournal.name) {
@@ -383,7 +420,8 @@ async function jump(journalDay, showDate)
 
 async function adaptiveJump(showDate)
 {
-  const pageTitle = logseq.settings.pageTitle;
+  const validatedSettings = validateSettings();
+  const pageTitle = validatedSettings.pageTitle;
   //getCurrentPageType
   const currentPage = await logseq.Editor.getCurrentPage();
   const curPageIsJournal = currentPage["journal?"];
@@ -406,6 +444,9 @@ async function adaptiveJump(showDate)
 
 
 function main() {
+  // Validate settings on startup
+  const validatedSettings = validateSettings();
+
   const enableJump = logseq.settings.enableJump;
   const jumpButtonPosition = logseq.settings.jumpButtonPosition;
 
