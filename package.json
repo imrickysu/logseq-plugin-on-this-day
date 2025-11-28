@@ -6,7 +6,9 @@
   "description": "Review previous journals on this day.",
   "scripts": {
     "dev": "parcel index.html --port 1235",
-    "build": "parcel build --public-url ./ --no-source-maps index.html  --no-minify"
+    "build": "parcel build --public-url ./ --no-source-maps index.html  --no-minify",
+    "lint": "eslint index.js",
+    "lint:fix": "eslint index.js --fix"
   },
   "logseq": {
     "icon": "./icon.png",
@@ -16,6 +18,7 @@
     "@logseq/libs": "^0.0.17"
   },
   "devDependencies": {
+    "eslint": "^8.57.1",
     "parcel-bundler": "^1.12.5"
   },
   "license": "MIT",
