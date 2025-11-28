@@ -406,10 +406,11 @@ function nextDay(date){
  * @throws {Error} If page generation fails
  * @example
  * await getOnThisDay(DIRECTION.TODAY);
- * // Generates the On This Day page for today
+ * // Always regenerates the On This Day page with today's entries
+ * // This allows users to refresh and see updated journal content
  *
  * await getOnThisDay(DIRECTION.PREVIOUS);
- * // Shows the previous day if already on the OTD page
+ * // Shows the previous day from the currently displayed date
  */
 async function getOnThisDay(showDate) {
 
@@ -418,27 +419,35 @@ async function getOnThisDay(showDate) {
   const today = new Date();
 
   try {
-  
+
     // get the On This Day page and the date on this page
     const otdPageData = await getOTDPage(); // hold the "On This Day" page no matter it's a new page or existing page
     const page = otdPageData.page;
     const dateOnPage = otdPageData.dateOnPage;
 
-    // if dateOnPage == 0, geneate today
-    // if dateOnPage == today , skip, return
-    // if dateOnPage != today  
-    //    case showDate = "Previous", generate previous day of dateOnPage
-    //    case showDate = "Next", generate next day of dateOnpage
-    //    case showDate = "Today", geneate today
+    // Determine what action to take based on current state and requested direction
+    const isShowingToday = dateOnPage &&
+                          dateOnPage.getFullYear() === today.getFullYear() &&
+                          dateOnPage.getMonth() === today.getMonth() &&
+                          dateOnPage.getDate() === today.getDate();
 
+    // If page is new (no date), generate today's entries
     if (dateOnPage == null) {
-      // new page
       await generateOTDPage(today, page);
-    } else if (dateOnPage.getFullYear() == today.getFullYear() &&
-              dateOnPage.getMonth()     == today.getMonth() &&
-              dateOnPage.getDate()      == today.getDate()) {
       return;
-    } else {
+    }
+
+    // If showing TODAY is requested, always regenerate to get latest journal updates
+    if (showDate === DIRECTION.TODAY) {
+      await cleanBlocksOnCurrentPage();
+      await generateOTDPage(today, page);
+      return;
+    }
+
+    // For PREVIOUS/NEXT navigation: if already showing today and navigating away, proceed
+    // If showing today and trying to navigate to today, we already handled it above
+    if (isShowingToday) {
+      // Navigate to previous or next day from today
       switch (showDate) {
       case DIRECTION.PREVIOUS:
         await cleanBlocksOnCurrentPage();
@@ -448,9 +457,19 @@ async function getOnThisDay(showDate) {
         await cleanBlocksOnCurrentPage();
         await generateOTDPage(nextDay(dateOnPage), page);
         break;
-      case DIRECTION.TODAY:
+      default:
+        console.error(MESSAGES.INVALID_SHOWDATE, showDate);
+      }
+    } else {
+      // Not showing today, navigate based on direction
+      switch (showDate) {
+      case DIRECTION.PREVIOUS:
         await cleanBlocksOnCurrentPage();
-        await generateOTDPage(today, page);
+        await generateOTDPage(previousDay(dateOnPage), page);
+        break;
+      case DIRECTION.NEXT:
+        await cleanBlocksOnCurrentPage();
+        await generateOTDPage(nextDay(dateOnPage), page);
         break;
       default:
         console.error(MESSAGES.INVALID_SHOWDATE, showDate);
